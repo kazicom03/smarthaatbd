@@ -1,0 +1,6 @@
+{
+  "name": "Smarthaatbd Shop",
+  "description": "একটি আধুনিক ও সাশ্রয়ী গ্যাজেট ও লাইফস্টাইল শপ",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

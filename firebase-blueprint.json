@@ -1,0 +1,159 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Registered customer accounts.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The Firebase Auth user ID" },
+        "name": { "type": "string", "description": "Full Name of the Customer" },
+        "email": { "type": "string", "description": "Customer Email Address" },
+        "phone": { "type": "string", "description": "Mobile/Phone Number" },
+        "address": { "type": "string", "description": "Default Delivery/Shipping Address" },
+        "createdAt": { "type": "number", "description": "Time of creation/signup timestamp" },
+        "role": { "type": "string", "enum": ["customer"], "description": "User role, defaults to customer" }
+      },
+      "required": ["uid", "name", "email", "phone", "createdAt", "role"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order invoices and shipping records.",
+      "type": "object",
+      "properties": {
+        "productName": { "type": "string" },
+        "productPrice": { "type": "number" },
+        "quantity": { "type": "number" },
+        "color": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "customerAddress": { "type": "string" },
+        "paymentMethod": { "type": "string", "enum": ["COD", "Bkash", "Nagad", "Bank"] },
+        "transactionId": { "type": "string" },
+        "status": { "type": "string" },
+        "time": { "type": "number" },
+        "deliveryLocation": { "type": "string" },
+        "deliveryCharge": { "type": "number" },
+        "totalAmount": { "type": "number" }
+      },
+      "required": ["productName", "productPrice", "customerName", "customerPhone", "customerAddress", "paymentMethod", "transactionId", "status", "time", "totalAmount"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Store items and gadgets.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "originalPrice": { "type": "number" },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "isNew": { "type": "boolean" }
+      },
+      "required": ["name", "price"]
+    },
+    "PaymentSettings": {
+      "title": "PaymentSettings",
+      "description": "Merchant details for bKash, Nagad, bank and shipping fees.",
+      "type": "object",
+      "properties": {
+        "bkash": { "type": "string" },
+        "nagad": { "type": "string" },
+        "bank": { "type": "string" },
+        "deliveryInside": { "type": "number" },
+        "deliveryOutside": { "type": "number" }
+      }
+    },
+    "ChatSession": {
+      "title": "ChatSession",
+      "description": "Active customer/guest live chat sessions.",
+      "type": "object",
+      "properties": {
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "lastMessage": { "type": "string" },
+        "lastActive": { "type": "number" },
+        "unreadByAdmin": { "type": "boolean" },
+        "unreadByCustomer": { "type": "boolean" },
+        "isGuest": { "type": "boolean" },
+        "expireAt": { "type": "object" }
+      },
+      "required": ["customerId", "customerName", "lastMessage", "lastActive", "unreadByAdmin", "unreadByCustomer", "isGuest"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Individual message within a live chat session.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "senderId", "text", "timestamp"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Product ratings and photo reviews submitted by customers.",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string", "description": "The target product ID" },
+        "productName": { "type": "string", "description": "Name of the product" },
+        "customerName": { "type": "string", "description": "Name of the customer writing the review" },
+        "rating": { "type": "number", "description": "Review score from 1-5" },
+        "comment": { "type": "string", "description": "Written feedback comment" },
+        "createdAt": { "type": "number", "description": "Timestamp when review was uploaded" },
+        "images": { "type": "array", "description": "Cloudinary secure URLs of review images" }
+      },
+      "required": ["productId", "productName", "customerName", "rating", "comment", "createdAt"]
+    },
+    "PromoCode": {
+      "title": "PromoCode",
+      "description": "Promo codes and discount coupons for customers.",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "type": { "type": "string", "enum": ["flat", "percentage"] },
+        "value": { "type": "number" },
+        "minPurchase": { "type": "number" },
+        "expiryDate": { "type": "string" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["code", "type", "value", "expiryDate", "active"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Collection storing registered user records indexed by their auth UID."
+    },
+    "orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection tracking customer orders."
+    },
+    "products/{productId}": {
+      "schema": "Product",
+      "description": "Catalog of items for sale."
+    },
+    "settings/{settingsId}": {
+      "schema": "PaymentSettings",
+      "description": "Global shop settings (payment channels and base shipping fees)."
+    },
+    "chat_sessions/{sessionId}": {
+      "schema": "ChatSession",
+      "description": "Main collection for listing live support chats."
+    },
+    "chat_sessions/{sessionId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Subcollection inside each chat session containing individual messages."
+    },
+    "reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Collection containing all direct customer feedback star ratings and photos."
+    },
+    "promo_codes/{codeId}": {
+      "schema": "PromoCode",
+      "description": "Collection of active and inactive promotional coupon codes."
+    }
+  }
+}

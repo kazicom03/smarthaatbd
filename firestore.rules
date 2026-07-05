@@ -1,0 +1,114 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- REUSABLE SECURITY PRIMITIVES ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'kazicom03@gmail.com' ||
+        request.auth.token.email == 'mdsagorju@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'customer') == 'admin')
+      );
+    }
+
+    // --- VALIDATION BLUEPRINTS ---
+    function isValidChatSession(data) {
+      return data.customerId is string &&
+             data.customerName is string &&
+             data.lastMessage is string &&
+             data.lastActive is number &&
+             data.unreadByAdmin is bool &&
+             data.unreadByCustomer is bool &&
+             data.isGuest is bool;
+    }
+
+    function isValidChatMessage(data) {
+      return data.id is string &&
+             data.senderId is string &&
+             data.text is string &&
+             data.timestamp is number;
+    }
+
+    // --- COLLECTION RULES ---
+
+    // Products config
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Settings config
+    match /settings/{settingsId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Users config
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.uid == userId;
+      allow update: if (isOwner(userId) && request.resource.data.uid == userId && (
+        !request.resource.data.keys().hasAny(['role']) || request.resource.data.role == resource.data.role
+      )) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Orders config
+    match /orders/{orderId} {
+      allow read: if true; // Allowed for guest searches by customer phone number
+      allow create: if request.resource.data.customerName is string
+                    && request.resource.data.customerPhone is string;
+      allow update, delete: if isAdmin();
+    }
+
+    // Chat Sessions config
+    match /chat_sessions/{sessionId} {
+      allow read, write: if isOwner(sessionId) 
+                         || (sessionId is string && sessionId.matches('^guest_.*'))
+                         || isAdmin();
+    }
+
+    // Chat Messages config
+    match /chat_sessions/{sessionId}/messages/{messageId} {
+      allow read, create: if isOwner(sessionId) 
+                          || (sessionId is string && sessionId.matches('^guest_.*'))
+                          || isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // Reviews config
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.resource.data.productId is string
+                    && request.resource.data.productName is string
+                    && request.resource.data.customerName is string
+                    && request.resource.data.rating is number
+                    && request.resource.data.comment is string;
+      allow update, delete: if isAdmin();
+    }
+
+    // Promo codes / Coupons config
+    match /promo_codes/{codeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
